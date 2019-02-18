@@ -6,7 +6,17 @@
 
 function copyAndFix {
     # fix install name "id"
-    install_name_tool -id "@rpath/$(basename $1)" $1
+    libfile=$1
+    install_name_tool -id "@rpath/$(basename ${libfile%%.*}).dylib" $1
+    
+    otool -l "$1" | grep "name " | grep "/Users/lucca/Downloads/" | cut -d " " -f11 | while read LIB
+    do
+        # point dylib to relative path
+        echo "change path: $(basename $1) -> $(basename $LIB)"
+        install_name_tool -change "$LIB" "@rpath/$(basename ${LIB%%.*}).dylib" $LINE
+    done
+
+    echo ""
 
     otool -l "$1" | grep "name " | grep "/usr/local/" | cut -d " " -f11 | while read LIB
     do
@@ -39,7 +49,7 @@ function copyAndFix {
         fi
 
         # point dylib to relative path
-        echo "change path: $1 -> $LIB"
+        echo "change path: $(basename $1) -> $(basename $LIB)"
         install_name_tool -change "$LIB" "@rpath/$(basename $LIB)" $LINE
     done
 
